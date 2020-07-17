@@ -4,7 +4,7 @@ EDIT scripts/handlebars/templates/api.hbs OR JSDOC COMMENT INSTEAD!
 -->
 # Transforms
 
-Transforms are functions that transform a property so that each platform can consume the property in different ways. A simple example is changing pixel values to point values for iOS and dp or sp for Android. Transforms are applied in a non-destructive way so each platform can transform the properties. Transforms are performed sequentially, so the order you use transforms matters. Transforms are used in your [configuration](config.md), and can be either [pre-defined transforms](transforms.md?id=defining-custom-transforms) supplied by Style Dictionary or [custom transforms](transforms.md?id=defining-custom-transforms).
+Transforms are functions that transform a property - this enables each platform to consume the property in different ways. A simple example is changing pixel values to point values for iOS and dp or sp for Android. Transforms are applied in a non-destructive way thus each platform can transform the properties. Transforms are performed sequentially, therfore the order you use transforms matters. Transforms are used in your [configuration](config.md), and can be either [pre-defined transforms](transforms.md?id=defining-custom-transforms) supplied by Style Dictionary or [custom transforms](transforms.md?id=defining-custom-transforms).
 
 ## Using Transforms
 You use transforms in your config file under platforms > [platform] > transforms
@@ -29,7 +29,7 @@ There are 3 types of transforms: attribute, name, and value.
 
 **Name:** A name transform transform the name of a property. You should really only be apply one name transformer because they will override each other if you use more than one.
 
-**Value:** The value transform is the most important as this is the one that changes the representation of the value. Colors can be turned into hex values, rgb, hsl, hsv, etc. Value transforms have a matcher function so that they only get run on certain properties. This allows us to only run a color transform on just the colors and not every property.
+**Value:** The value transform is the most important as this is the one that changes the representation of the value. Colors can be turned into hex values, rgb, hsl, hsv, etc. Value transforms have a matcher function that filter which properties that transform runs on. This allows us to only run a color transform on only the colors and not every property.
 
 ## Defining Custom Transforms
 You can define custom transforms with the [`registerTransform`](api.md#registertransform).
@@ -173,7 +173,7 @@ Creates a constant-style name based on the full CTI of the property. If you defi
 ### name/ti/constant 
 
 
-Creates a constant-style name on just the type and item of the property. This is useful if you want to create different static classes/files for categories like `Color.BACKGROUND_BASE`. If you define a prefix on the platform in your config, it will prepend with your prefix.
+Creates a constant-style name on the type and item of the property. This is useful if you want to create different static classes/files for categories like `Color.BACKGROUND_BASE`. If you define a prefix on the platform in your config, it will prepend with your prefix.
 
 ```js
 // Matches: all
@@ -209,6 +209,36 @@ Transforms the value into an RGB string
 // Matches: prop.attributes.category === 'color'
 // Returns:
 "rgb(0, 150, 136)"
+```
+
+
+* * *
+
+### color/hsl 
+
+
+Transforms the value into an HSL string or HSLA if alpha is present. Better browser support than color/hsl-4
+
+```js
+// Matches: prop.attributes.category === 'color'
+// Returns:
+"hsl(174, 100%, 29%)"
+"hsl(174, 100%, 29%, .5)"
+```
+
+
+* * *
+
+### color/hsl-4 
+
+
+Transforms the value into an HSL string, using fourth argument if alpha is present.
+
+```js
+// Matches: prop.attributes.category === 'color'
+// Returns:
+"hsl(174 100% 29%)"
+"hsl(174 100% 29% / .5)"
 ```
 
 
@@ -264,7 +294,7 @@ Transforms the value into an UIColor class for iOS
 ```objectivec
 // Matches: prop.attributes.category === 'color'
 // Returns:
-[UIColor colorWithRed:0.00f green:0.59f blue:0.53f alpha:1.0f]
+[UIColor colorWithRed:0.114f green:0.114f blue:0.114f alpha:1.000f]
 ```
 
 
@@ -278,7 +308,7 @@ Transforms the value into an UIColor swift class for iOS
 ```swift
 // Matches: prop.attributes.category === 'color'
 // Returns:
-UIColor(red: 0.67, green: 0.67, blue: 0.67, alpha:0.6)
+UIColor(red: 0.667, green: 0.667, blue: 0.667, alpha:0.6)
 ```
 
 
@@ -589,6 +619,71 @@ Wraps the value in a double-quoted string to make a string literal.
 ```swift
 // Matches: prop.attributes.category === 'asset'
 // Returns: "string"
+```
+
+
+* * *
+
+### color/hex8flutter 
+
+
+Transforms the value into a Flutter Color object using 8-digit hex with the alpha chanel on start
+ ```js
+ // Matches: prop.attributes.category === 'color'
+ // Returns:
+ Color(0xFF00FF5F)
+ ```
+
+
+* * *
+
+### content/flutter/literal 
+
+
+Wraps the value in a double-quoted string to make a string literal.
+
+```dart
+// Matches: prop.attributes.category === 'content'
+// Returns: "string"
+```
+
+
+* * *
+
+### asset/flutter/literal 
+
+
+Wraps the value in a double-quoted string to make a string literal.
+
+```dart
+// Matches: prop.attributes.category === 'asset'
+// Returns: "string"
+```
+
+
+* * *
+
+### font/flutter/literal 
+
+
+Wraps the value in a double-quoted string to make a string literal.
+
+```dart
+// Matches: prop.attributes.category === 'font'
+// Returns: "string"
+```
+
+
+* * *
+
+### size/flutter/remToDouble 
+
+
+Scales the number by 16 to get to points for Flutter
+
+```dart
+// Matches: prop.attributes.category === 'size'
+// Returns: 16.00
 ```
 
 

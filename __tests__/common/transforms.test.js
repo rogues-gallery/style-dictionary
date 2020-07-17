@@ -13,6 +13,7 @@
 
 var transforms = require('../../lib/common/transforms');
 var path = require('path');
+var Color = require('tinycolor2');
 
 describe('common', () => {
   describe('transforms', () => {
@@ -168,6 +169,49 @@ describe('common', () => {
       });
     });
 
+    describe('transform', () => {
+      describe('attribute/cti', () => {
+
+        const prop = {
+          "path": ["color", "background", "button", "primary", "active", "extra"],
+        };
+        const propShort = { "path": ["color", "primary"] };
+        const propOverride = {
+          "path": ["button", "primary", "border", "width"],
+          "attributes": { "category": "size", "component": "button" }
+        };
+
+        const attrs = transforms["attribute/cti"].transformer(prop);
+        const attrsShort = transforms["attribute/cti"].transformer(propShort);
+        const attrsOverride = transforms["attribute/cti"].transformer(propOverride);
+
+        it('should assign attributes correctly', () => {
+          expect(attrs).toEqual({
+            "category": "color",
+            "type": "background",
+            "item": "button",
+            "subitem": "primary",
+            "state": "active"
+          });
+        });
+
+        it('should not assign path props when path is short' , () => {
+          expect(attrsShort).toEqual({
+            "category": "color",
+            "type": "primary"
+          });
+        });
+
+        it('should leave other attributes alone', () => {
+          expect(attrsOverride).toHaveProperty('component', 'button');
+        });
+
+        it('should not override previously assigned path attributes', () => {
+          expect(attrsOverride).toHaveProperty('category', 'size');
+        });
+      });
+    });
+
     describe('color/hex', () => {
       it('should handle hex colors', () => {
         var value = transforms["color/hex"].transformer({
@@ -281,19 +325,58 @@ describe('common', () => {
       });
     });
 
+    describe('color/hsl-4', () => {
+      it('should handle normal colors', () => {
+        var value = transforms["color/hsl-4"].transformer({
+          value: "#009688"
+        });
+        expect(value).toBe("hsl(174 100% 29%)");
+      });
+
+      it('should handle colors with transparency', () => {
+        var value = transforms["color/hsl-4"].transformer({
+          value: "#00968899"
+        });
+        expect(value).toBe("hsl(174 100% 29% / 0.6)");
+      });
+    });
+
+    describe('color/hsl', () => {
+      it('should handle normal colors', () => {
+        var value = transforms["color/hsl"].transformer({
+          value: "#009688"
+        });
+        expect(value).toBe("hsl(174, 100%, 29%)");
+      });
+
+      it('should handle colors with transparency', () => {
+        var value = transforms["color/hsl"].transformer({
+          value: "#00968899"
+        });
+        expect(value).toBe("hsla(174, 100%, 29%, 0.6)");
+      });
+    });
+
     describe('color/UIColor', () => {
       it('should handle normal colors', () => {
         var value = transforms["color/UIColor"].transformer({
           value: "#aaaaaa"
         });
-        expect(value).toBe("[UIColor colorWithRed:0.67f green:0.67f blue:0.67f alpha:1.00f]");
+        expect(value).toBe("[UIColor colorWithRed:0.667f green:0.667f blue:0.667f alpha:1.000f]");
+      });
+
+      it('should retain enough precision when converting to decimal', () => {
+        var value = transforms["color/UIColor"].transformer({
+          value: "#1d1d1d"
+        });
+        expect(value).toBe("[UIColor colorWithRed:0.114f green:0.114f blue:0.114f alpha:1.000f]");
       });
 
       it('should handle colors with transparency', () => {
         var value = transforms["color/UIColor"].transformer({
           value: "#aaaaaa99"
         });
-        expect(value).toBe("[UIColor colorWithRed:0.67f green:0.67f blue:0.67f alpha:0.60f]");
+        expect(value).toBe("[UIColor colorWithRed:0.667f green:0.667f blue:0.667f alpha:0.600f]");
       });
     });
 
@@ -302,17 +385,39 @@ describe('common', () => {
         var value = transforms["color/UIColorSwift"].transformer({
           value: "#aaaaaa"
         });
-        expect(value).toBe("UIColor(red: 0.67, green: 0.67, blue: 0.67, alpha:1)");
+        expect(value).toBe("UIColor(red: 0.667, green: 0.667, blue: 0.667, alpha:1)");
+      });
+
+      it('should retain enough precision when converting to decimal', () => {
+        var value = transforms["color/UIColorSwift"].transformer({
+          value: "#1d1d1d"
+        });
+        expect(value).toBe("UIColor(red: 0.114, green: 0.114, blue: 0.114, alpha:1)");
       });
 
       it('should handle colors with transparency', () => {
         var value = transforms["color/UIColorSwift"].transformer({
           value: "#aaaaaa99"
         });
-        expect(value).toBe("UIColor(red: 0.67, green: 0.67, blue: 0.67, alpha:0.6)");
+        expect(value).toBe("UIColor(red: 0.667, green: 0.667, blue: 0.667, alpha:0.6)");
       });
     });
 
+    describe('color/hex8flutter', () => {
+      it('should handle colors without alpha', () => {
+        var value = transforms["color/hex8flutter"].transformer({
+          value: "#aaaaaa"
+        });
+        expect(value).toBe("Color(0xFFAAAAAA)");
+      });
+
+      it('should handle colors with alpha', () => {
+        var value = transforms["color/hex8flutter"].transformer({
+          value: "#aaaaaa99"
+        });
+        expect(value).toBe("Color(0x99AAAAAA)");
+      });
+    });
 
     describe('color/css', () => {
       it('should handle normal colors', () => {
@@ -330,6 +435,23 @@ describe('common', () => {
       });
     });
 
+    describe('color/sketch', () => {
+      it('should retain hex specificity', () => {
+        var originalHex = "#0b7dbb";
+        var value = transforms["color/sketch"].transformer({
+          original: {
+            value: originalHex
+          }
+        });
+        var newHex = Color({
+          r: value.red * 255,
+          g: value.green * 255,
+          b: value.blue * 255
+        });
+        expect(originalHex).toEqual(newHex.toHexString());
+      });
+    });
+
     describe('size/sp', () => {
       it('should work', () => {
         var value = transforms["size/sp"].transformer({
@@ -340,6 +462,9 @@ describe('common', () => {
         });
         expect(value).toBe("12.00sp");
         expect(value2).toBe("12.00sp");
+      });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/sp"].transformer({value: "a"})).toThrow();
       });
     });
 
@@ -354,6 +479,9 @@ describe('common', () => {
         expect(value).toBe("12.00dp");
         expect(value2).toBe("12.00dp");
       });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
+      });
     });
 
     describe('size/remToSp', () => {
@@ -362,6 +490,9 @@ describe('common', () => {
           value: "1"
         });
         expect(value).toBe("16.00sp");
+      });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
       });
     });
 
@@ -372,6 +503,9 @@ describe('common', () => {
         });
         expect(value).toBe("16.00dp");
       });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
+      });
     });
 
     describe('size/px', () => {
@@ -380,6 +514,9 @@ describe('common', () => {
           value: "10"
         });
         expect(value).toBe("10px");
+      });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
       });
     });
 
@@ -390,6 +527,9 @@ describe('common', () => {
         });
         expect(value).toBe("16.00f");
       });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
+      });
     });
 
     describe('size/remToPx', () => {
@@ -399,6 +539,9 @@ describe('common', () => {
         });
         expect(value).toBe("16px");
       });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
+      });
     });
 
     describe('size/rem', () => {
@@ -407,6 +550,18 @@ describe('common', () => {
           value: "1"
         });
         expect(value).toBe("1rem");
+      });
+      it('should throw an error if prop value is Nan', () => {
+        expect( () => transforms["size/dp"].transformer({value: "a"})).toThrow();
+      });
+    });
+
+    describe('size/flutter/remToDouble', () => {
+      it('should work', () => {
+        var value = transforms["size/flutter/remToDouble"].transformer({
+          value: "1"
+        });
+        expect(value).toBe("16.00");
       });
     });
 

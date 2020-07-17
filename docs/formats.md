@@ -31,15 +31,62 @@ You use formats in your config file under platforms > [platform] > files > [file
 
 There is an extensive (but not exhaustive) list of [included formats](#pre-defined-formats) available in Style Dictionary.
 
+### Format configuration
+
+Formats can take configuration to make them more flexible. This allows you to re-use the same format multiple times with different configurations or to allow the format to use data not defined in the tokens themselves. To configure a format, add extra attributes on the file object in your configuration like the following:
+
+```json
+{
+  "source": ["properties/**/*.json"],
+  "platforms": {
+    "scss": {
+      "transformGroup": "scss",
+      "files": [{
+        "destination": "map.scss",
+        "format": "scss/map-deep",
+        "mapName": "my-tokens"
+      }]
+    }
+  }
+}
+```
+
+In this example we are adding the `mapName` configuration to the `scss/map-deep` format. This will change the name of the SCSS map in the output. Not all formats have the configuration options; format configuration is defined by the format itself. To see the configurtion options of a format, take a look at the documentation of the [specific format](#pre-defined-formats)
+
+### Filtering tokens
+
+A special file configuration is `filter`, which will filter the tokens before they get to the format. This allows you to re-use the same format to generate multiple files with different sets of tokens. Filtering tokens works by adding a `filter` attribute on the file object, where `filter` is:
+
+* An object which gets passed to [Lodash's filter method](https://lodash.com/docs/4.17.14#filter).
+* A string that references the name of a registered filter, using the [`registerFilter`](api.md#registerfilter) method
+* A function if you are defining your configuration in Javascript rather than JSON. The filter function takes a token as the property and should return a boolean if the token should be included (true) or excluded (false).
+
+```javascript
+{
+  "destination": "destination",
+  "format": "myCustomFormat",
+  "filter": "myCustomFilter", // a named filter defined with .registerFilter
+  "filter": function(token) {}, // an inline function
+  "filter": {} // an object pass to lodash's filter method
+}
+```
 
 ### Creating formats
 
-You can create custom formats using the [`registerFormat`](api.md#registerformat) function.
+You can create custom formats using the [`registerFormat`](api.md#registerformat) function. If you want to add configuration to your custom format, `this` is bound to the file object. Using this, you can access attributes on the file object with `this.myCustomAttribute` if the file object looks like:
+
+```json
+{
+  "destination": "destination",
+  "format": "myCustomFormat",
+  "myCustomAttribute": "Hello world"
+}
+```
 
 
 ### Using a template / templating engine to create a format
 
-A formatter is just a simple function and created easily with most templating engines. Templates are useful if there is a lot of boilerplate code to insert (e.g. ObjectiveC files). If the output consists of just the values (e.g. a flat SCSS variables file), writing a formatter function directly may be easier.
+Formatters are functions and created easily with most templating engines. Formats can be built using templates if there is a lot of boilerplate code to insert (e.g. ObjectiveC files). If the output consists of only the values (e.g. a flat SCSS variables file), writing a formatter function directly may be easier.
 
 Any templating language can work as there is a node module for it. All you need to do is register a format that calls your template and returns a string.
 
@@ -116,8 +163,8 @@ Name the map by adding a 'mapName' attribute on the file object in your config.
 **Example**  
 ```scss
 $tokens: (
-  $color-background-base: #f0f0f0;
-  $color-background-alt: #eeeeee;
+  'color-background-base': #f0f0f0;
+  'color-background-alt': #eeeeee;
 )
 ```
 
@@ -575,7 +622,7 @@ Creates a JSON file of the style dictionary.
 ### json/asset 
 
 
-Creates a JSON file of just the assets defined in the style dictionary.
+Creates a JSON file of the assets defined in the style dictionary.
 
 **Example**  
 ```js
@@ -648,7 +695,7 @@ Creates a sketchpalette file of all the base colors
 
 
 Creates a sketchpalette file compatible with version 2 of
-the sketchpalette plugin. To use this you should use the 
+the sketchpalette plugin. To use this you should use the
 'color/sketch' transform to get the correct value for the colors.
 
 **Example**  
@@ -663,6 +710,25 @@ the sketchpalette plugin. To use this you should use the
   ]
 }
 ```
+
+* * *
+
+### flutter/class.dart 
+
+
+Creates a Dart implementation file of a class with values
+
+**Example**  
+```dart
+import 'package:flutter/material.dart';
+
+class StyleDictionary {
+  StyleDictionary._();
+  
+    static const colorBrandPrimary = Color(0x00ff5fff);
+    static const sizeFontSizeMedium = 16.00;
+    static const contentFontFamily1 = "NewJune";
+```   
 
 * * *
 

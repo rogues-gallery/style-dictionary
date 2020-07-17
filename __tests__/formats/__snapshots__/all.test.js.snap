@@ -78,9 +78,28 @@ exports[`formats all should match css/variables snapshot 1`] = `
  */
 
 :root {
- --color_red: #FF0000; /* comment */
+  --color_red: #FF0000; /* comment */
 }
 "
+`;
+
+exports[`formats all should match flutter/class.dart snapshot 1`] = `
+"
+//
+// __output/
+//
+// Do not edit directly
+// Generated on Sat, 01 Jan 2000 00:00:00 GMT
+//
+
+
+import 'dart:ui';
+
+class  {
+  ._();
+  
+    static const color_red = #FF0000;
+}"
 `;
 
 exports[`formats all should match ios/colors.h snapshot 1`] = `
@@ -364,7 +383,7 @@ exports[`formats all should match ios-swift/class.swift snapshot 1`] = `
 import UIKit
 
 public class  {
-    static let color_red = #FF0000
+    public static let color_red = #FF0000
 }
 "
 `;
@@ -381,7 +400,7 @@ exports[`formats all should match ios-swift/enum.swift snapshot 1`] = `
 import UIKit
 
 public enum  {
-    static let color_red = #FF0000
+    public static let color_red = #FF0000
 }
 "
 `;
